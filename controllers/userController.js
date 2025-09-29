@@ -149,29 +149,39 @@ const loginUser = async (req,res) => {
     try {
         const userMail = req.body.userMail;
         const userPassword = req.body.userPassword;
-        let passwordHaash = await bcrypt.hash(userPassword, 8);
+        // let passwordHaash = await bcrypt.hash(userPassword, 8);
         if (!userMail || !userPassword){
-            return res.status(500).send({
+            return res.status(404).send({
                 success: false,
                 message: "Por favor ingrese todos los campos"
             })
         }
-        if (userMail && userPassword){
-            console.log("Funciona hasta aquí");
-            db.query(`SELECT * FROM users WHERE userMail = ?`, [userMail], async (err, results) => {
-            console.log("Hasta aquí también");
-            if(results.length === 0 || !(await bcrypt.compare(userPassword, results[0].userPassword))){
-                return res.status(404).send({
-                    success: false,
-                    message: "Usuario o contraseña incorrectos"
-                })
-            }else{
-                return res.status(200).send({
+        let validUser = false;
+        const data = await db.query(`SELECT * FROM users WHERE userMail = ?`, [userMail]);
+        const user = data[0][0];
+        // console.log(user);
+        // console.log(user.userPassword);
+        // console.log(userPassword);
+        const compare = bcrypt.compareSync(userPassword, user.userPassword);
+        
+        if (user && !compare) {
+            validUser = false;
+        } else {
+            validUser = true;
+        }
+
+        if (validUser) {
+            return res.status(200).send({
                     success: true,
-                    message: "Inicio de sesión exitoso"
+                    jwt: "para login del frontend",
+                    data: user
                 })
-            }
-        })}
+        } else {
+            return res.status(404).send({
+                success: false,
+                message: "Usuario o contraseña incorrectos"
+            })
+        }
     } catch (error) {
         res.status(500).send({
             success: false,

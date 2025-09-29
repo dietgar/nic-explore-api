@@ -7,7 +7,7 @@ const router = express.Router();
 // Routes
 
 // Get All Users
-router.get('/getall', getUsers);
+router.get('/getAll', getUsers);
 
 // Get Stundent By ID
 router.get('/get/:id', getUserByID);

@@ -18,7 +18,7 @@ app.use(morgan("dev"));
 app.use('/api/v1/users', require('./routes/usersRoutes'));
 
 app.get('/', (req, res) => {
-    res.status(200).send('<h1>HOLA</h1>');
+    res.status(200).send('<h1>NIC-EXPLORE API</h1>');
 })
 
 // Port
