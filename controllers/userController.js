@@ -1,5 +1,5 @@
-//const { use } = require('react');
 const db = require('../config/db');
+const bcrypt = require('bcrypt');
 
 // Get All Users List
 const getUsers = async (req,res) => {
@@ -62,13 +62,14 @@ const getUserByID = async (req,res) => {
 const createUser = async (req,res) => {
     try {
         const {firstName, lastName, username, userMail, userPassword} = req.body;
+        let passwordHaash = await bcrypt.hash(userPassword, 8);
         if (!firstName || !lastName || !username || !userMail || !userPassword){
             return res.status(500).send({
                 success: false,
                 message: "Por favor ingrese todos los campos",
             })
         }
-        const data = await db.query(`INSERT INTO users (firstName, lastName, username, userMail, userPassword) VALUES    (?,?,?,?,?)`, [firstName, lastName, username, userMail, userPassword]);
+        const data = await db.query(`INSERT INTO users (firstName, lastName, username, userMail, userPassword) VALUES    (?,?,?,?,?)`, [firstName, lastName, username, userMail, passwordHaash]);
         if (!data){
             return res.status(404).send({
                 success: false,
@@ -146,7 +147,9 @@ const deleteUser = async (req,res) => {
 
 const loginUser = async (req,res) => {
     try {
-        const { userMail, userPassword} = req.body;
+        const userMail = req.body.userMail;
+        const userPassword = req.body.userPassword;
+        let passwordHaash = await bcrypt.hash(userPassword, 8);
         if (!userMail || !userPassword){
             return res.status(500).send({
                 success: false,
@@ -154,15 +157,23 @@ const loginUser = async (req,res) => {
             })
         }
         if (userMail && userPassword){
-            db.query(`SELECT * FROM users WHERE userMail = ? AND userPassword = ?`, [userMail, userPassword])
-            res.status(200).send({
-                success: true,
-                message: "Inicio de sesión exitoso"
-            })
-        }
-        
+            console.log("Funciona hasta aquí");
+            db.query(`SELECT * FROM users WHERE userMail = ?`, [userMail], async (err, results) => {
+            console.log("Hasta aquí también");
+            if(results.length === 0 || !(await bcrypt.compare(userPassword, results[0].userPassword))){
+                return res.status(404).send({
+                    success: false,
+                    message: "Usuario o contraseña incorrectos"
+                })
+            }else{
+                return res.status(200).send({
+                    success: true,
+                    message: "Inicio de sesión exitoso"
+                })
+            }
+        })}
     } catch (error) {
-        req.status(500).send({
+        res.status(500).send({
             success: false,
             message: "Error al iniciar sesión",
             error
