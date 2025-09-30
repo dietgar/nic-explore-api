@@ -28,6 +28,7 @@ const getUsers = async (req,res) => {
     }
 }
 
+// Get User By ID
 const getUserByID = async (req,res) => {
     try {
         const userID = req.params.id;
@@ -61,6 +62,9 @@ const getUserByID = async (req,res) => {
 // Create New User 
 const createUser = async (req,res) => {
     try {
+        const registerDate = new Date();
+        actualDate = registerDate.getFullYear() + "-" + (registerDate.getMonth()+1) + "-" + registerDate.getDate();
+        console.log(actualDate);
         const {firstName, lastName, username, userMail, userPassword} = req.body;
         let passwordHaash = await bcrypt.hash(userPassword, 8);
         if (!firstName || !lastName || !username || !userMail || !userPassword){
@@ -69,7 +73,8 @@ const createUser = async (req,res) => {
                 message: "Por favor ingrese todos los campos",
             })
         }
-        const data = await db.query(`INSERT INTO users (firstName, lastName, username, userMail, userPassword) VALUES    (?,?,?,?,?)`, [firstName, lastName, username, userMail, passwordHaash]);
+        const data = await db.query(`INSERT INTO users (firstName, lastName, username, userMail, userPassword, registerDate) VALUES (?,?,?,?,?,?)`, [firstName, lastName, username, userMail, passwordHaash, actualDate]);
+        const user = await db.query(`SELECT * FROM users WHERE userMail = ?`, [userMail]);
         if (!data){
             return res.status(404).send({
                 success: false,
@@ -79,6 +84,7 @@ const createUser = async (req,res) => {
         res.status(201).send({
             success: true,
             message: "Nuevo usuario creado",
+            user: user[0]
         })
     } catch (error) {
         console.log(error);
@@ -122,6 +128,7 @@ const updateUser = async (req,res) => {
     }
 }
 
+// Delete User By ID
 const deleteUser = async (req,res) => {
     try {
         const userID = req.params.id;
@@ -145,6 +152,7 @@ const deleteUser = async (req,res) => {
     }
 }
 
+// Login User
 const loginUser = async (req,res) => {
     try {
         const userMail = req.body.userMail;
@@ -169,12 +177,13 @@ const loginUser = async (req,res) => {
         } else {
             validUser = true;
         }
-
+        const fechaPeticion = new Date();
+        console.log(fechaPeticion.getHours() + ":" + fechaPeticion.getMinutes() + ":" + fechaPeticion.getSeconds());
         if (validUser) {
             return res.status(200).send({
                     success: true,
-                    jwt: "para login del frontend",
-                    data: user
+                    message: "Inicio de sesión exitoso",
+                    user: data[0][0]
                 })
         } else {
             return res.status(404).send({
@@ -191,4 +200,34 @@ const loginUser = async (req,res) => {
     }
 }
 
-module.exports = { getUsers, getUserByID, createUser, updateUser, deleteUser, loginUser };
+const addDescription = async (req,res) => {
+    try {
+        const userID = req.params.id;
+        const description = req.body.description;
+        if (!userID || !description){
+            return res.status(500).send({
+                success: false,
+                message: "Por favor ingrese todos los campos",
+            })
+        }
+        const data = await db.query(`INSERT INTO users (description) VALUES (?) WHERE id = ?`, [description, userID]);
+        if (!data){
+            return res.status(500).send({
+                success: false,
+                message: "Error al agregar la descripcion"
+            })
+        }
+        res.status(200).send({
+            success: true,
+            message: "Descripción agregada correctamente"
+        })
+    } catch (error) {
+        res.status(500).send({
+            success: false,
+            message: "Error al agregar la descripción",
+            error
+        })
+    }
+}
+
+module.exports = { getUsers, getUserByID, createUser, updateUser, deleteUser, loginUser, addDescription };
