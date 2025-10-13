@@ -2,10 +2,11 @@ const express = require('express');
 const colors = require('colors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
-const mySqlPool = require('./config/db');
 
 // Configure Dotenv
 dotenv.config();
+
+const mySqlPool = require('./config/db');
 
 // Rest Object
 const app = express();
@@ -24,7 +25,7 @@ app.get('/', (req, res) => {
 // Port
 const PORT = process.env.PORT || 8000;
 
-// Contidionaly Listen
+// Conditionally Listen
 mySqlPool.query('SELECT 1').then(() => {
     // MySQL Connected
     console.log('Estoy dentro'.bgBlue.white);
